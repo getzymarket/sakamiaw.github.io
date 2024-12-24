@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Dino</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f7f7f7;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            overflow: hidden;
+            background-color: #e0e0e0;
+        }
+
+        .dino {
+            position: absolute;
+            bottom: 0;
+            left: 50px;
+            width: 100px;
+            height: 200px;
+            background-image: url('dino.png'); /* Ganti dengan gambar dino Anda */
+            background-size: cover;
+        }
+
+        .obstacle {
+            position: absolute;
+            bottom: 0;
+            right: -200px;
+            width: 60px;
+            height: 70px;
+            background-image: url('obstacle.png'); /* Ganti dengan gambar rintangan Anda */
+            background-size: cover;
+        }
+
+        .score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+            font-family: roboto, sans-serif;
+        }
+
+        .jump {
+            animation: jump 1s forwards;
+        }
+
+        @keyframes jump {
+            0% { bottom: 0; }
+            90% { bottom: 300px; } /* Tinggi lompatan */
+            100% { bottom: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Elemen audio untuk suara lompat -->
+    <audio id="jumpSound" src="jump-sound.mp3" preload="auto"></audio>
+
+    <!-- Elemen audio untuk lagu latar -->
+    <audio id="backgroundMusic" src="meong.mp3" preload="auto" loop></audio>
+
+    <div class="game-container">
+        <div class="dino" id="dino"></div>
+        <div class="obstacle" id="obstacle"></div>
+        <div class="score" id="score">Score: 0</div>
+    </div>
+    <script>
+        let dino = document.getElementById("dino");
+        let obstacle = document.getElementById("obstacle");
+        let scoreDisplay = document.getElementById("score");
+        let score = 0;
+        let isJumping = false; // Flag untuk mencegah lompat terus-menerus
+        let gameOver = false;
+        let jumpSound = document.getElementById("jumpSound");
+        let backgroundMusic = document.getElementById("backgroundMusic");
+
+        // Memulai background music setelah interaksi pengguna
+        document.addEventListener("click", function () {
+            backgroundMusic.volume = 0.5; // Atur volume 50%
+            backgroundMusic.play();
+        }, { once: true }); // Hanya berjalan sekali saat pertama kali diklik
+
+        // Fungsi untuk melompat
+        function jump() {
+            if (isJumping || gameOver) return; // Cegah lompat terus-menerus atau saat game over
+            isJumping = true;
+            dino.classList.add("jump");
+
+            // Mainkan suara lompat
+            jumpSound.currentTime = 0; // Reset waktu suara agar bisa diputar dari awal
+            jumpSound.play();
+
+            setTimeout(() => {
+                dino.classList.remove("jump");
+                isJumping = false; // Setel kembali setelah animasi selesai
+            }, 1000); // Sinkron dengan durasi animasi
+        }
+
+        // Fungsi untuk memperbarui skor
+        function updateScore() {
+            score++;
+            scoreDisplay.innerText = "Score: " + score;
+        }
+
+        // Fungsi untuk memeriksa tabrakan
+        function checkCollision() {
+            const dinoRect = dino.getBoundingClientRect();
+            const obstacleRect = obstacle.getBoundingClientRect();
+
+            if (
+                dinoRect.x < obstacleRect.x + obstacleRect.width &&
+                dinoRect.x + dinoRect.width > obstacleRect.x &&
+                dinoRect.bottom > obstacleRect.top
+            ) {
+                gameOver = true;
+                alert("Game Over! Your score: " + score);
+                document.location.reload();
+            }
+        }
+
+        // Event listener untuk lompat
+        document.addEventListener("keydown", (e) => {
+            if (e.code === "Space") jump(); // Lompat saat spasi ditekan
+        });
+
+        document.addEventListener("touchstart", jump);
+
+        // Interval untuk menggerakkan rintangan dan memeriksa tabrakan
+        let obstacleSpeed = 3; // Kecepatan rintangan
+        setInterval(() => {
+            if (gameOver) return;
+
+            let obstacleRight = parseInt(getComputedStyle(obstacle).right);
+            obstacle.style.right = (obstacleRight + obstacleSpeed) + "px";
+
+            if (obstacleRight > window.innerWidth) {
+                obstacle.style.right = "-40px"; // Reset posisi obstacle
+                updateScore(); // Tambah skor
+            }
+
+            checkCollision();
+        }, 10);
+    </script>
+</body>
+</html>
